@@ -4,7 +4,7 @@
  */
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "agents-starter",
+	"name": "cloud-usage-advisor",
 	"main": "src/server.ts",
 	"compatibility_date": "2025-08-03",
 	"compatibility_flags": [
@@ -15,7 +15,9 @@
 		"remote": true
 	},
 	"assets": {
-		"directory": "public"
+		"directory": "public",
+		"binding": "ASSETS"
+
 	},
 	"durable_objects": {
 		"bindings": [

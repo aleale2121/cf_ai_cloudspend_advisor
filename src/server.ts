@@ -1,7 +1,5 @@
 import { routeAgentRequest, type Schedule } from "agents";
-
 import { getSchedulePrompt } from "agents/schedule";
-
 import { AIChatAgent } from "agents/ai-chat-agent";
 import {
   generateId,
@@ -13,34 +11,21 @@ import {
   createUIMessageStreamResponse,
   type ToolSet
 } from "ai";
-import { openai } from "@ai-sdk/openai";
+import { google } from "@ai-sdk/google";
 import { processToolCalls, cleanupMessages } from "./utils";
 import { tools, executions } from "./tools";
-// import { env } from "cloudflare:workers";
+import { analyzeCostsWithGemini } from "./optimizer";
 
-const model = openai("gpt-4o-2024-11-20");
-// Cloudflare AI Gateway
-// const openai = createOpenAI({
-//   apiKey: env.OPENAI_API_KEY,
-//   baseURL: env.GATEWAY_BASE_URL,
-// });
+const model = google("gemini-2.5-flash");
 
 /**
- * Chat Agent implementation that handles real-time AI chat interactions
+ * Chat Agent implementation
  */
 export class Chat extends AIChatAgent<Env> {
-  /**
-   * Handles incoming chat messages and manages the response stream
-   */
   async onChatMessage(
     onFinish: StreamTextOnFinishCallback<ToolSet>,
     _options?: { abortSignal?: AbortSignal }
   ) {
-    // const mcpConnection = await this.mcp.connect(
-    //   "https://path-to-mcp-server/sse"
-    // );
-
-    // Collect all tools, including MCP tools
     const allTools = {
       ...tools,
       ...this.mcp.getAITools()
@@ -48,11 +33,8 @@ export class Chat extends AIChatAgent<Env> {
 
     const stream = createUIMessageStream({
       execute: async ({ writer }) => {
-        // Clean up incomplete tool calls to prevent API errors
         const cleanedMessages = cleanupMessages(this.messages);
 
-        // Process any pending tool calls from previous messages
-        // This handles human-in-the-loop confirmations for tools
         const processedMessages = await processToolCalls({
           messages: cleanedMessages,
           dataStream: writer,
@@ -67,12 +49,9 @@ ${getSchedulePrompt({ date: new Date() })}
 
 If the user asks to schedule a task, use the schedule tool to schedule the task.
 `,
-
           messages: convertToModelMessages(processedMessages),
           model,
           tools: allTools,
-          // Type boundary: streamText expects specific tool types, but base class uses ToolSet
-          // This is safe because our tools satisfy ToolSet interface (verified by 'satisfies' in tools.ts)
           onFinish: onFinish as unknown as StreamTextOnFinishCallback<
             typeof allTools
           >,
@@ -85,6 +64,7 @@ If the user asks to schedule a task, use the schedule tool to schedule the task.
 
     return createUIMessageStreamResponse({ stream });
   }
+
   async executeTask(description: string, _task: Schedule<string>) {
     await this.saveMessages([
       ...this.messages,
@@ -106,26 +86,66 @@ If the user asks to schedule a task, use the schedule tool to schedule the task.
 }
 
 /**
- * Worker entry point that routes incoming requests to the appropriate handler
+ * Worker entry point
  */
 export default {
-  async fetch(request: Request, env: Env, _ctx: ExecutionContext) {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext) {
     const url = new URL(request.url);
 
-    if (url.pathname === "/check-open-ai-key") {
-      const hasOpenAIKey = !!process.env.OPENAI_API_KEY;
-      return Response.json({
-        success: hasOpenAIKey
-      });
+    // ✅ Serve React UI
+    if (url.pathname === "/" || url.pathname.startsWith("/assets")) {
+      return env.ASSETS.fetch(request);
     }
-    if (!process.env.OPENAI_API_KEY) {
+
+    // ✅ API route: Analyze Costs
+    if (url.pathname === "/api/tools/analyzeCosts" && request.method === "POST") {
+      try {
+        const body = await request.json() as {
+          plan: string;
+          metrics: string;
+          comment?: string;
+        };
+
+        const { plan, metrics, comment } = body;
+
+        if (!plan || !metrics) {
+          return Response.json(
+            { error: "Missing required fields: plan and metrics are required" },
+            { status: 400 }
+          );
+        }
+
+        const result = await analyzeCostsWithGemini(env, plan, metrics, comment || "");
+
+        return Response.json({ suggestion: result });
+      } catch (error) {
+        console.error("Error in cost analysis:", error);
+        return Response.json(
+          {
+            error: "Analysis failed",
+            details: error instanceof Error ? error.message : "Unknown error"
+          },
+          { status: 500 }
+        );
+      }
+    }
+
+    // ✅ API route: check Gemini key
+    if (url.pathname === "/check-gemini-key") {
+      const hasGeminiKey = !!env.GOOGLE_GEMINI_API_KEY;
+      return Response.json({ success: hasGeminiKey });
+    }
+
+    if (!env.GOOGLE_GEMINI_API_KEY) {
       console.error(
-        "OPENAI_API_KEY is not set, don't forget to set it locally in .dev.vars, and use `wrangler secret bulk .dev.vars` to upload it to production"
+        "GOOGLE_GEMINI_API_KEY is not set. Use `wrangler secret put GOOGLE_GEMINI_API_KEY`"
       );
     }
+
+    // ✅ fallback: route AI agent requests
     return (
-      // Route the request to our agent or return 404 if not found
       (await routeAgentRequest(request, env)) ||
+      env.ASSETS.fetch(request) || // serve static assets
       new Response("Not found", { status: 404 })
     );
   }

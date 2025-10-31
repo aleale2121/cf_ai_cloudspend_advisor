@@ -8,6 +8,7 @@ import { z } from "zod/v3";
 import type { Chat } from "./server";
 import { getCurrentAgent } from "agents";
 import { scheduleSchema } from "agents/schedule";
+import { analyzeCostsWithGemini } from "./optimizer";
 
 /**
  * Weather information tool that requires human confirmation
@@ -108,11 +109,29 @@ const cancelScheduledTask = tool({
   }
 });
 
+const analyzeCosts = tool({
+  description: "Analyze a cloud plan + usage metrics and suggest optimizations",
+  inputSchema: z.object({
+    plan: z.string(),
+    metrics: z.string(),
+    comment: z.string().optional(),
+  }),
+  execute: async ({ plan, metrics, comment }) => {
+    // Get env from the agent context
+    const { agent } = getCurrentAgent<Chat>();
+    const env = (agent as any).env; // Access env from the agent
+    
+    return await analyzeCostsWithGemini(env, plan, metrics, comment ?? "");
+  },
+});
+
+
 /**
  * Export all available tools
  * These will be provided to the AI model to describe available capabilities
  */
 export const tools = {
+  analyzeCosts,
   getWeatherInformation,
   getLocalTime,
   scheduleTask,
@@ -129,5 +148,5 @@ export const executions = {
   getWeatherInformation: async ({ city }: { city: string }) => {
     console.log(`Getting weather information for ${city}`);
     return `The weather in ${city} is sunny`;
-  }
+  },
 };
