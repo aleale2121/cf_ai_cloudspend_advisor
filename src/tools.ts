@@ -1,13 +1,11 @@
 /**
  * Tool definitions for the AI chat agent
- * Tools can either require human confirmation or execute automatically
  */
 import { tool, type ToolSet } from "ai";
 import { z } from "zod/v3";
 
 import type { Chat } from "./server";
 import { getCurrentAgent } from "agents";
-// src/tools.ts (only snippet)
 import { analyzeCostsWithLLM } from "./optimizer";
 
 const analyzeCosts = tool({
@@ -19,7 +17,7 @@ const analyzeCosts = tool({
   }),
   execute: async ({ plan, metrics, comment }) => {
     const { agent } = getCurrentAgent<Chat>();
-    const env = (agent as any).env as Env; // read Worker env
+    const env = (agent as any).env as Env;
     return await analyzeCostsWithLLM(env, plan, metrics, comment ?? "");
   }
 });
