@@ -305,7 +305,6 @@ export default function App() {
       </div>
 
       <div className="flex-1 flex overflow-hidden">
-        {/* === Sidebar (History) - Desktop: 1/5, Mobile: Overlay === */}
         <aside
           className={`
             w-80 flex-shrink-0 border-r border-slate-200 dark:border-slate-700 
