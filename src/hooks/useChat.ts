@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
 import type {
   ChatMessage,
-  ChatRequest, 
+  ChatRequest,
   ChatResponse,
   FileUploadProgress,
   HistoryResponse,
@@ -245,7 +245,7 @@ export function useChat() {
         sessionId: currentSessionId,
         message: hasMessage ? message : undefined,
         fileIds: fileIds.length > 0 ? fileIds : undefined,
-        threadId: currentThreadId || undefined 
+        threadId: currentThreadId || undefined
       };
 
       const res = await fetch("/api/chat", {
@@ -291,7 +291,6 @@ export function useChat() {
 
     setHistoryLoading(true);
     try {
-    
       const url = currentThreadId
         ? `/api/chat/history?threadId=${currentThreadId}`
         : "/api/chat/history";

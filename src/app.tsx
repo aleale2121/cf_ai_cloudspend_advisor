@@ -36,7 +36,7 @@ export default function App() {
   // Load chat history on mount
   useEffect(() => {
     loadChatHistory();
-  }, [loadChatHistory]); 
+  }, [loadChatHistory]);
 
   const handleThreadSelectWithSidebar = async (threadId: string) => {
     const shouldCloseSidebar = await handleThreadSelect(threadId);

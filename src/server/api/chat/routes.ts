@@ -57,9 +57,7 @@ export async function chatRoutes(
     );
 
     if (messagesWithFiles.length === 0) {
-      console.log(
-        "Thread exists but has no messages, returning empty history"
-      );
+      console.log("Thread exists but has no messages, returning empty history");
       return Response.json({ messages: [] });
     }
 
@@ -133,7 +131,7 @@ async function handleChatMessage(
       message = "",
       fileIds = [],
       sessionId = "",
-      threadId: providedThreadId 
+      threadId: providedThreadId
     } = (await request.json()) as {
       message?: string;
       fileIds?: number[];
