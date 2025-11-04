@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { MessageCircle } from "lucide-react";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { ChatMessages } from "@/components/chat/ChatMessages";
 import { Header } from "@/components/layout/Header";
@@ -9,6 +10,8 @@ export default function App() {
   const [showSidebar, setShowSidebar] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
+  const hasMounted = useRef(false);
+
   const {
     message,
     setMessage,
@@ -16,6 +19,7 @@ export default function App() {
     loading,
     fileUploads,
     currentThreadId,
+    isNewChat,
     handleNewChat,
     handleThreadSelect,
     handleFileSelect,
@@ -25,18 +29,22 @@ export default function App() {
     isSendEnabled
   } = useChat();
 
-  // Auto-scroll to bottom when chat updates
+  // Fixed auto-scroll - only trigger when chat or loading changes
   useEffect(() => {
     if (chatContainerRef.current) {
-      chatContainerRef.current.scrollTop =
-        chatContainerRef.current.scrollHeight;
+      const { scrollHeight, clientHeight } = chatContainerRef.current;
+      chatContainerRef.current.scrollTop = scrollHeight - clientHeight;
     }
-  }, []);
+  }, [chat, loading]);
 
-  // Load chat history on mount
+  // FIX: Load chat history only on initial mount
   useEffect(() => {
-    loadChatHistory();
-  }, [loadChatHistory]);
+    if (!hasMounted.current) {
+      console.log("🚀 App mounted - loading chat history");
+      loadChatHistory();
+      hasMounted.current = true;
+    }
+  }, []); // Empty dependency array - only run once on mount
 
   const handleThreadSelectWithSidebar = async (threadId: string) => {
     const shouldCloseSidebar = await handleThreadSelect(threadId);
@@ -80,6 +88,21 @@ export default function App() {
             ref={chatContainerRef}
             className="flex-1 overflow-y-auto p-4 lg:p-6 flex flex-col gap-4 lg:gap-6 bg-slate-50 dark:bg-slate-800/30"
           >
+            {isNewChat && chat.length === 0 && !loading && (
+              <div className="flex-1 flex items-center justify-center">
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-4 mx-auto">
+                    <MessageCircle className="h-8 w-8 text-blue-500" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                    New Chat Started
+                  </h3>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
+                    Upload files or type a message to begin
+                  </p>
+                </div>
+              </div>
+            )}
             <ChatMessages messages={chat} loading={loading} />
           </div>
 

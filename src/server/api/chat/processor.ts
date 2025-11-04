@@ -1,5 +1,5 @@
 import type { UploadedFile } from "@/types/chat";
-import { analyzeCostsWithGemini } from "../../ai/optimizer";
+import { analyzeCostsWithLlama } from "../../ai/optimizer";
 import { saveAnalysis, saveMessage } from "../../db/d1";
 import { getFilesBySession } from "../../storage/file-storage";
 import { getRelevantContext, isRelevant } from "../../utils/context";
@@ -12,12 +12,13 @@ export async function processChatMessage(
   fileIds: number[],
   sessionId: string
 ): Promise<Response> {
-  const messageId = crypto.randomUUID();
+  const messageId = crypto.randomUUID(); 
   let analysisId: number | null = null;
 
   console.log("Processing chat message...");
   console.log(`Processing message for thread: ${threadId}`);
   console.log(`Session ID: ${sessionId}, File IDs: ${fileIds.join(", ")}`);
+  console.log(`Generated message ID: ${messageId}`);
 
   let files: UploadedFile[] = [];
 
@@ -116,7 +117,7 @@ export async function processChatMessage(
 
     console.log("Starting AI analysis...");
 
-    const result = await analyzeCostsWithGemini(
+    const result = await analyzeCostsWithLlama(
       env,
       planText,
       metricsText,
@@ -154,21 +155,26 @@ export async function processChatMessage(
       );
     }
 
-    // Save messages as relevant
+    // Save messages as relevant - use the same messageId for user message
     console.log("💾 Saving chat messages...");
+    const userMessageContent =
+      message ||
+      (files.length > 0
+        ? `[Uploaded Files: ${files.map((f) => f.fileName).join(", ")}]`
+        : message);
+
     await saveMessage(
       env,
       userId,
       threadId,
       "user",
-      message ||
-        (files.length > 0
-          ? `[Uploaded Files: ${files.map((f) => f.fileName).join(", ")}]`
-          : message),
+      userMessageContent,
       true,
       analysisId,
-      messageId
+      messageId // Use the same messageId
     );
+
+    const assistantMessageId = crypto.randomUUID();
     await saveMessage(
       env,
       userId,
@@ -176,7 +182,8 @@ export async function processChatMessage(
       "assistant",
       result,
       true,
-      analysisId
+      analysisId,
+      assistantMessageId
     );
 
     console.log("✅ Chat processing completed successfully");
@@ -184,20 +191,23 @@ export async function processChatMessage(
       reply: result,
       threadId,
       analysisId,
-      messageId
+      messageId: assistantMessageId // Return the assistant message ID
     });
   } else {
     console.log("❌ Content is irrelevant, saving as non-relevant message...");
+
+    const userMessageContent =
+      message ||
+      (files.length > 0
+        ? `[Uploaded Files: ${files.map((f) => f.fileName).join(", ")}]`
+        : message);
 
     await saveMessage(
       env,
       userId,
       threadId,
       "user",
-      message ||
-        (files.length > 0
-          ? `[Uploaded Files: ${files.map((f) => f.fileName).join(", ")}]`
-          : message),
+      userMessageContent,
       false,
       null,
       messageId
@@ -215,9 +225,23 @@ export async function processChatMessage(
         "I'm specialized in cloud cost optimization and FinOps. Please ask me about cloud billing, cost optimization strategies, usage metrics analysis, or upload relevant cloud infrastructure files.";
     }
 
-    await saveMessage(env, userId, threadId, "assistant", reply, false, null);
+    const assistantMessageId = crypto.randomUUID();
+    await saveMessage(
+      env,
+      userId,
+      threadId,
+      "assistant",
+      reply,
+      false,
+      null,
+      assistantMessageId
+    );
 
     console.log("❌ Chat processing completed - content was irrelevant");
-    return Response.json({ reply, threadId });
+    return Response.json({
+      reply,
+      threadId,
+      messageId: assistantMessageId
+    });
   }
 }
