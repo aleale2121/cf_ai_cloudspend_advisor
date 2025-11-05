@@ -2,7 +2,7 @@ import { getCurrentAgent } from "agents";
 import { type ToolSet, tool } from "ai";
 import { z } from "zod/v3";
 import type { Chat } from "../../ai/chat-agent";
-import {analyzeCostsWithLlama } from "../../ai/optimizer";
+import { analyzeCostsWithLlama } from "../../ai/optimizer";
 
 const analyzeCosts = tool({
   description: "Analyze a cloud plan + usage metrics and suggest optimizations",

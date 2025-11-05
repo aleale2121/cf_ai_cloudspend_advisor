@@ -53,7 +53,6 @@ ${comment || "(none provided)"}
       }
     );
 
-    // Cloudflare AI returns response directly as string or in response property
     const out =
       typeof response === "string"
         ? response

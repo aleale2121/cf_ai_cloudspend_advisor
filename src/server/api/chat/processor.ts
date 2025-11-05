@@ -12,7 +12,7 @@ export async function processChatMessage(
   fileIds: number[],
   sessionId: string
 ): Promise<Response> {
-  const messageId = crypto.randomUUID(); 
+  const messageId = crypto.randomUUID();
   let analysisId: number | null = null;
 
   console.log("Processing chat message...");
