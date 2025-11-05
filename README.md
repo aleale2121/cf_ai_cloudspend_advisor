@@ -22,21 +22,21 @@ It assists cloud engineers and financial teams by analyzing **cloud billing plan
 
 ```markdown
 ┌────────────────────────────┐
-│ Cloudflare Pages (React)   │  ← Chat UI, uploads, real-timeupdates                     
+│ Cloudflare Pages (React) │ ← Chat UI, uploads, real-timeupdates  
 └──────────────┬─────────────┘
-               │
-               ▼
+│
+▼
 ┌────────────────────────────────┐
-│ Cloudflare Worker (server)     │  ← LLM orchestration, message routing
-│  - Durable Object: Chat        │
-│  - Calls Llama 3.3 (Workers AI)│
-│  - Calls Gemini (external API) │
+│ Cloudflare Worker (server) │ ← LLM orchestration, message routing
+│ - Durable Object: Chat │
+│ - Calls Llama 3.3 (Workers AI)│
+│ - Calls Gemini (external API) │
 └──────────────┬─────────────────┘
-               │
-               ▼
+│
+▼
 ┌────────────────────────────┐
-│ D1 Database (SQLite)       │  ← conversations, messages, analyses
-│ R2 Storage (S3-like)       │  ← uploaded billing/metrics files
+│ D1 Database (SQLite) │ ← conversations, messages, analyses
+│ R2 Storage (S3-like) │ ← uploaded billing/metrics files
 └────────────────────────────┘
 ```
 
@@ -49,33 +49,33 @@ It assists cloud engineers and financial teams by analyzing **cloud billing plan
 ```markdown
 .
 .
-├── migrations/                  # D1 database migrations
-│   └── 0001_initial_schema.sql
-├── public/                      # Static assets
+├── migrations/ # D1 database migrations
+│ └── 0001_initial_schema.sql
+├── public/ # Static assets
 ├── src/
-│   ├── app.tsx                  # Main application entry (React)
-│   ├── components/              # UI components
-│   ├── hooks/                   # Reusable logic (e.g. useChat)
-│   ├── server/                  # Cloudflare Worker + Durable Object back-end
-│   │   ├── ai/                  # LLM + cost analysis logic (Gemini + Workers AI)
-│   │   ├── api/                 # HTTP API routes
-│   │   ├── db/                  # D1 access layer
-│   │   ├── storage/             # R2 upload operations
-│   │   └── utils/               # Shared helpers
-│   ├── styles/                  # Tailwind and CSS styling
-│   └── types/                   # Shared TypeScript types
-├── PROMPTS.md                   # Required: AI prompt documentation
-├── README.md                    # Documentation
-├── wrangler.jsonc               # Cloudflare config (bindings, deployments)
+│ ├── app.tsx # Main application entry (React)
+│ ├── components/ # UI components
+│ ├── hooks/ # Reusable logic (e.g. useChat)
+│ ├── server/ # Cloudflare Worker + Durable Object back-end
+│ │ ├── ai/ # LLM + cost analysis logic (Gemini + Workers AI)
+│ │ ├── api/ # HTTP API routes
+│ │ ├── db/ # D1 access layer
+│ │ ├── storage/ # R2 upload operations
+│ │ └── utils/ # Shared helpers
+│ ├── styles/ # Tailwind and CSS styling
+│ └── types/ # Shared TypeScript types
+├── PROMPTS.md # Required: AI prompt documentation
+├── README.md # Documentation
+├── wrangler.jsonc # Cloudflare config (bindings, deployments)
 ├── package.json
 └── tsconfig.json
-
+```
 
 ---
 
 ## Running the Project Locally (Development)
 
-## 📦 Clone the Project
+### 📦 Clone the Project
 
 ```bash
 git clone https://github.com/aleale2121/cf_ai_finops_copilot.git
@@ -194,19 +194,19 @@ https://<your-worker>.workers.dev
 
 ## Environment Bindings
 
-| Binding | Type | Description |
-|----------|------|-------------|
-| `AI` | Workers AI | Access to Llama 3.3 |
-| `GOOGLE_GEMINI_API_KEY` | Secret | API key for Gemini |
-| `DB` | D1 Database | Persistent FinOps data |
-| `FILES` | R2 Bucket | File uploads |
-| `ASSETS` | Pages / Static assets | Frontend |
-| `Chat` | Durable Object | Stateful chat memory |
+| Binding                 | Type                  | Description            |
+| ----------------------- | --------------------- | ---------------------- |
+| `AI`                    | Workers AI            | Access to Llama 3.3    |
+| `GOOGLE_GEMINI_API_KEY` | Secret                | API key for Gemini     |
+| `DB`                    | D1 Database           | Persistent FinOps data |
+| `FILES`                 | R2 Bucket             | File uploads           |
+| `ASSETS`                | Pages / Static assets | Frontend               |
+| `Chat`                  | Durable Object        | Stateful chat memory   |
 
 ## Example Prompts
 
-- **Analysis prompt:** “Given PLAN, METRICS, COMMENT → produce FinOps summary + JSON of optimization areas.”  
-- **Summary prompt:** “Summarize key cloud spend drivers and suggested actions.”  
+- **Analysis prompt:** “Given PLAN, METRICS, COMMENT → produce FinOps summary + JSON of optimization areas.”
+- **Summary prompt:** “Summarize key cloud spend drivers and suggested actions.”
 
 ## Deployment
 

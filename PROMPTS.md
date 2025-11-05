@@ -1,4 +1,3 @@
-
 # AI Prompts Used in Development
 
 ## Cloud Cost Analysis Prompt
@@ -9,11 +8,11 @@ You are a cloud FinOps expert. Given PLAN/BILLING + USAGE METRICS + optional COM
 
 (B) JSON array in triple backticks with items:
 {
-  "Area": string,
-  "Resource": string,
-  "Issue": string,
-  "Optimization": string,
-  "Cloudflare_Alternative": string
+"Area": string,
+"Resource": string,
+"Issue": string,
+"Optimization": string,
+"Cloudflare_Alternative": string
 }
 
 ## Relevance Check Prompt
